@@ -1,9 +1,9 @@
 from tkinter import *
 import random
-
+import pickle
 
 GAME_WIDTH = 700
-GAME_HEIGHT = 700
+GAME_HEIGHT = 600
 SPEED = 100
 SPACE_SIZE = 50
 BODY_PARTS = 3
@@ -56,7 +56,7 @@ def next_turn(snake, food):
     if x == food.coordinates[0] and y == food.coordinates[1]:
         global score
         score += 1
-        label.config(text="Score:{}".format(score))
+        label.config(text="Score:{}  High Score:{}".format(score, high_score))
         canvas.delete("food")
         food = Food()
     else:
@@ -103,22 +103,45 @@ def check_collisions(snake):
 
 
 def game_over():
+    global score, high_score
     canvas.delete(ALL)
-    canvas.create_text(canvas.winfo_width()/2, canvas.winfo_height()/2,
-                       font=('consolas', 70), text="GAME OVER", fill="red", tag="gameover")
+    canvas.create_text(
+        canvas.winfo_width() / 2, canvas.winfo_height() / 2,
+        font=('consolas', 70), text="GAME OVER", fill="red", tag="gameover"
+    )
     start_button.config(state=NORMAL)
+
+    if score > high_score:
+        high_score = score
+        save_high_score(high_score)
+
+    label.config(text="Score:{}  High Score:{}".format(score, high_score))
 
 
 def start_game():
-    global snake, food, score, direction
+    global snake, food, score, direction, high_score
     score = 0
     direction = 'down'
-    label.config(text="Score:{}".format(score))
+    label.config(text="Score:{}  High Score:{}".format(score, high_score))
     canvas.delete(ALL)
     start_button.config(state=DISABLED)
     snake = Snake()
     food = Food()
     next_turn(snake, food)
+
+
+def load_high_score():
+    try:
+        with open("high_score.pickle", "rb") as file:
+            high_score = pickle.load(file)
+        return high_score
+    except (OSError, IOError, pickle.UnpicklingError):
+        return 0
+
+
+def save_high_score(high_score):
+    with open("high_score.pickle", "wb") as file:
+        pickle.dump(high_score, file)
 
 
 window = Tk()
@@ -127,8 +150,9 @@ window.resizable(False, False)
 
 score = 0
 direction = 'down'
+high_score = load_high_score()
 
-label = Label(window, text="Score:{}".format(score), font=('consolas', 40))
+label = Label(window, text="Score:{}  High Score:{}".format(score, high_score), font=('consolas', 40))
 label.pack()
 
 canvas = Canvas(window, bg=BACKGROUND_COLOR, height=GAME_HEIGHT, width=GAME_WIDTH)
