@@ -4,20 +4,23 @@ import pickle
 
 GAME_WIDTH = 700
 GAME_HEIGHT = 600
-SPEED = 100
 SPACE_SIZE = 50
 BODY_PARTS = 3
 SNAKE_COLOR = "#00FF00"
 FOOD_COLOR = "#FF0000"
 BACKGROUND_COLOR = "#000000"
-LEVELS = [1, 2, 3, 4, 5]
-SPEED_DECREMENT = 10
+SPEED = {
+    "Easy": 100,
+    "Medium": 75,
+    "Hard": 50
+}
 
 class Snake:
     def __init__(self):
         self.body_size = BODY_PARTS
         self.coordinates = []
         self.squares = []
+        self.direction = "down"
 
         for i in range(0, BODY_PARTS):
             self.coordinates.append([0, 0])
@@ -40,20 +43,20 @@ class Food:
 def next_turn(snake, food):
     x, y = snake.coordinates[0]
 
-    if direction == "up":
+    if snake.direction == "up":
         y -= SPACE_SIZE
-    elif direction == "down":
+    elif snake.direction == "down":
         y += SPACE_SIZE
-    elif direction == "left":
+    elif snake.direction == "left":
         x -= SPACE_SIZE
-    elif direction == "right":
+    elif snake.direction == "right":
         x += SPACE_SIZE
 
     snake.coordinates.insert(0, (x, y))
 
     square = canvas.create_rectangle(x, y, x + SPACE_SIZE, y + SPACE_SIZE, fill=SNAKE_COLOR)
 
-    snake.squares.insert(0, square)  # Add the new square to the snake's squares list
+    snake.squares.insert(0, square)
 
     if x == food.coordinates[0] and y == food.coordinates[1]:
         global score
@@ -72,21 +75,21 @@ def next_turn(snake, food):
         window.after(get_speed(), next_turn, snake, food)
 
 
-def change_direction(new_direction):
-    global direction
-
-    if new_direction == 'left':
-        if direction != 'right':
-            direction = new_direction
-    elif new_direction == 'right':
-        if direction != 'left':
-            direction = new_direction
-    elif new_direction == 'up':
-        if direction != 'down':
-            direction = new_direction
-    elif new_direction == 'down':
-        if direction != 'up':
-            direction = new_direction
+def change_direction(event, snake):
+    key = event.keysym.lower()
+    
+    if key == "up":
+        if snake.direction != "down":
+            snake.direction = "up"
+    elif key == "down":
+        if snake.direction != "up":
+            snake.direction = "down"
+    elif key == "left":
+        if snake.direction != "right":
+            snake.direction = "left"
+    elif key == "right":
+        if snake.direction != "left":
+            snake.direction = "right"
 
 
 def check_collisions(snake):
@@ -121,10 +124,9 @@ def game_over():
 
 
 def start_game():
-    global snake, food, score, direction, high_score, level
+    global snake, food, score, level, high_score
     score = 0
-    direction = 'down'
-    level = int(level_var.get())  # Get the selected level from the dropdown menu
+    level = level_var.get()
     label.config(text="Score:{}  High Score:{}  Level:{}".format(score, high_score, level))
     canvas.delete(ALL)
     start_button.config(state=DISABLED)
@@ -148,17 +150,16 @@ def save_high_score(high_score):
 
 
 def get_speed():
-    return SPEED - (level - 1) * SPEED_DECREMENT
+    return SPEED[level]
 
 
 window = Tk()
-window.title("Snake game")
+window.title("Snake Game")
 window.resizable(False, False)
 
 score = 0
-direction = 'down'
+level = "Easy"
 high_score = load_high_score()
-level = 1
 
 label = Label(window, text="Score:{}  High Score:{}  Level:{}".format(score, high_score, level), font=('consolas', 40))
 label.pack()
@@ -166,17 +167,14 @@ label.pack()
 canvas = Canvas(window, bg=BACKGROUND_COLOR, height=GAME_HEIGHT, width=GAME_WIDTH)
 canvas.pack()
 
-level_label = Label(window, text="Level:", font=('consolas', 20))
-level_label.pack()
-
-level_var = StringVar(window)
-level_var.set(LEVELS[0])  # Set the default level
-level_dropdown = OptionMenu(window, level_var, *LEVELS)
-level_dropdown.pack()
-
 start_button = Button(window, text="Start", font=('consolas', 20), command=start_game)
 start_button.pack()
-start_button.focus_set()
+
+level_var = StringVar()
+level_var.set(level)
+level_menu = OptionMenu(window, level_var, *SPEED.keys())
+level_menu.config(font=('consolas', 15))
+level_menu.pack()
 
 window.update()
 
@@ -190,10 +188,7 @@ y = int((screen_height/2) - (window_height/2))
 
 window.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
-window.bind('<Left>', lambda event: change_direction('left'))
-window.bind('<Right>', lambda event: change_direction('right'))
-window.bind('<Up>', lambda event: change_direction('up'))
-window.bind('<Down>', lambda event: change_direction('down'))
+window.bind('<Key>', lambda event: change_direction(event, snake))
 
 snake = None
 food = None
