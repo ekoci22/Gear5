@@ -1,6 +1,10 @@
-from tkinter import *
 import random
 import pickle
+import pygame
+from pygame import mixer
+from tkinter import *
+
+pygame.init()
 
 GAME_WIDTH = 700
 GAME_HEIGHT = 600
@@ -14,6 +18,8 @@ SPEED = {
     "Medium": 75,
     "Hard": 50
 }
+
+mixer.init()
 
 class Snake:
     def __init__(self):
@@ -32,7 +38,7 @@ class Snake:
 
 class Food:
     def __init__(self):
-        x = random.randint(0, (GAME_WIDTH / SPACE_SIZE)-1) * SPACE_SIZE
+        x = random.randint(0, (GAME_WIDTH / SPACE_SIZE) - 1) * SPACE_SIZE
         y = random.randint(0, (GAME_HEIGHT / SPACE_SIZE) - 1) * SPACE_SIZE
 
         self.coordinates = [x, y]
@@ -61,6 +67,7 @@ def next_turn(snake, food):
     if x == food.coordinates[0] and y == food.coordinates[1]:
         global score
         score += 1
+        mixer.Sound("laser.wav").play()  # Play the laser sound effect
         label.config(text="Score:{}  High Score:{}  Level:{}".format(score, high_score, level))
         canvas.delete("food")
         food = Food()
@@ -75,9 +82,9 @@ def next_turn(snake, food):
         window.after(get_speed(), next_turn, snake, food)
 
 
-def change_direction(event, snake):
+def change_direction(event):
     key = event.keysym.lower()
-    
+
     if key == "up":
         if snake.direction != "down":
             snake.direction = "up"
@@ -109,6 +116,8 @@ def check_collisions(snake):
 
 def game_over():
     global score, high_score
+    mixer.music.stop()  # Stop the background music
+    mixer.Sound("explosion.wav").play()  # Play the explosion sound
     canvas.delete(ALL)
     canvas.create_text(
         canvas.winfo_width() / 2, canvas.winfo_height() / 2,
@@ -133,6 +142,8 @@ def start_game():
     snake = Snake()
     food = Food()
     next_turn(snake, food)
+    mixer.music.load('background.wav')
+    mixer.music.play()
 
 
 def load_high_score():
@@ -183,12 +194,12 @@ window_height = window.winfo_height()
 screen_width = window.winfo_screenwidth()
 screen_height = window.winfo_screenheight()
 
-x = int((screen_width/2) - (window_width/2))
-y = int((screen_height/2) - (window_height/2))
+x = int((screen_width / 2) - (window_width / 2))
+y = int((screen_height / 2) - (window_height / 2))
 
 window.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
-window.bind('<Key>', lambda event: change_direction(event, snake))
+window.bind('<Key>', change_direction)
 
 snake = None
 food = None
