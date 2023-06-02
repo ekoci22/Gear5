@@ -10,6 +10,8 @@ BODY_PARTS = 3
 SNAKE_COLOR = "#00FF00"
 FOOD_COLOR = "#FF0000"
 BACKGROUND_COLOR = "#000000"
+LEVELS = [1, 2, 3, 4, 5]
+SPEED_DECREMENT = 10
 
 class Snake:
     def __init__(self):
@@ -51,12 +53,12 @@ def next_turn(snake, food):
 
     square = canvas.create_rectangle(x, y, x + SPACE_SIZE, y + SPACE_SIZE, fill=SNAKE_COLOR)
 
-    snake.squares.insert(0, square)
+    snake.squares.insert(0, square)  # Add the new square to the snake's squares list
 
     if x == food.coordinates[0] and y == food.coordinates[1]:
         global score
         score += 1
-        label.config(text="Score:{}  High Score:{}".format(score, high_score))
+        label.config(text="Score:{}  High Score:{}  Level:{}".format(score, high_score, level))
         canvas.delete("food")
         food = Food()
     else:
@@ -67,7 +69,7 @@ def next_turn(snake, food):
     if check_collisions(snake):
         game_over()
     else:
-        window.after(SPEED, next_turn, snake, food)
+        window.after(get_speed(), next_turn, snake, food)
 
 
 def change_direction(new_direction):
@@ -115,14 +117,15 @@ def game_over():
         high_score = score
         save_high_score(high_score)
 
-    label.config(text="Score:{}  High Score:{}".format(score, high_score))
+    label.config(text="Score:{}  High Score:{}  Level:{}".format(score, high_score, level))
 
 
 def start_game():
-    global snake, food, score, direction, high_score
+    global snake, food, score, direction, high_score, level
     score = 0
     direction = 'down'
-    label.config(text="Score:{}  High Score:{}".format(score, high_score))
+    level = int(level_var.get())  # Get the selected level from the dropdown menu
+    label.config(text="Score:{}  High Score:{}  Level:{}".format(score, high_score, level))
     canvas.delete(ALL)
     start_button.config(state=DISABLED)
     snake = Snake()
@@ -144,6 +147,10 @@ def save_high_score(high_score):
         pickle.dump(high_score, file)
 
 
+def get_speed():
+    return SPEED - (level - 1) * SPEED_DECREMENT
+
+
 window = Tk()
 window.title("Snake game")
 window.resizable(False, False)
@@ -151,12 +158,21 @@ window.resizable(False, False)
 score = 0
 direction = 'down'
 high_score = load_high_score()
+level = 1
 
-label = Label(window, text="Score:{}  High Score:{}".format(score, high_score), font=('consolas', 40))
+label = Label(window, text="Score:{}  High Score:{}  Level:{}".format(score, high_score, level), font=('consolas', 40))
 label.pack()
 
 canvas = Canvas(window, bg=BACKGROUND_COLOR, height=GAME_HEIGHT, width=GAME_WIDTH)
 canvas.pack()
+
+level_label = Label(window, text="Level:", font=('consolas', 20))
+level_label.pack()
+
+level_var = StringVar(window)
+level_var.set(LEVELS[0])  # Set the default level
+level_dropdown = OptionMenu(window, level_var, *LEVELS)
+level_dropdown.pack()
 
 start_button = Button(window, text="Start", font=('consolas', 20), command=start_game)
 start_button.pack()
